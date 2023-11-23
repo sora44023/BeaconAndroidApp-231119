@@ -9,7 +9,6 @@ import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
@@ -20,8 +19,6 @@ import org.altbeacon.beacon.BeaconManager;
 
 import java.math.BigDecimal;
 
-import javax.xml.validation.Validator;
-
 public class MainActivity extends AppCompatActivity {
 
     protected static final String TAG = "MainActivity";
@@ -29,6 +26,7 @@ public class MainActivity extends AppCompatActivity {
     private BeaconViewModel model;
     private TextView distanceView;
     private Vibrator vibrator;
+    private VibrationEffect ve = VibrationEffect.createWaveform(new long[]{300, 300,300, 300}, -1);
 
     private static final int PERMISSION_REQUEST_COARSE_LOCATION = 1;
 
@@ -41,7 +39,6 @@ public class MainActivity extends AppCompatActivity {
 
         // vibration
         vibrator = (Vibrator) getSystemService(VIBRATOR_SERVICE);
-        VibrationEffect ve2 = VibrationEffect.createWaveform(new long[]{300, 300,300, 300}, -1);
 
         // Android M Permission check
         if (this.checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
@@ -61,12 +58,14 @@ public class MainActivity extends AppCompatActivity {
         model = new ViewModelProvider(this).get(BeaconViewModel.class);
         BeaconHandler beaconHandler = new BeaconHandler(beaconManager, model);
         distanceView = findViewById(R.id.distanceView);
+
+        // observation
         final Observer<Boolean> statusObserver = new Observer<Boolean>() {
             @Override
             public void onChanged(Boolean aBoolean) {
                 updateStatus();
                 if(!model.getStatus().getValue()){
-                    vibrator.vibrate(ve2);
+                    notifyOnSignalLoss();
                 }
             }
         };
@@ -78,18 +77,30 @@ public class MainActivity extends AppCompatActivity {
         };
         model.getStatus().observe(this,statusObserver);
         model.getDistance().observe(this,distanceObserver);
+    }
+
+    private void notifyOnSignalLoss() {
+        Log.d(TAG,"notifyOnSignalLoss");
+        vibrator.vibrate(ve);
+        final AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("忘れ物をしています");
+        builder.setMessage("Beaconの信号を失いました");
+        builder.setPositiveButton(android.R.string.ok, null);
+        builder.create();
+        builder.show();
 
     }
 
     private void updateStatus(){
         Log.d(TAG, "update status!");
         String s = "?";
-        if(model.getStatus().getValue() != null && model.getDistance().getValue() != null) {
-            if (model.getStatus().getValue()) {
-                s = BigDecimal.valueOf(model.getDistance().getValue()).toPlainString();
-            } else {
-                s = "?";
-            }
+        if(model.getStatus().getValue() == null || model.getDistance().getValue() == null) {
+            return;
+        }
+        if (model.getStatus().getValue()) {
+            s = BigDecimal.valueOf(model.getDistance().getValue()).toPlainString();
+        } else {
+            s = "?";
         }
         distanceView.setText(s);
     }
