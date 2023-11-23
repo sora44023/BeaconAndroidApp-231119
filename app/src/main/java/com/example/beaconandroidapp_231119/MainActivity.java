@@ -7,9 +7,12 @@ import androidx.lifecycle.ViewModelProvider;
 import android.Manifest;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
+import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.VibrationEffect;
+import android.os.Vibrator;
 import android.util.Log;
 import android.widget.TextView;
 
@@ -17,12 +20,15 @@ import org.altbeacon.beacon.BeaconManager;
 
 import java.math.BigDecimal;
 
+import javax.xml.validation.Validator;
+
 public class MainActivity extends AppCompatActivity {
 
     protected static final String TAG = "MainActivity";
     private BeaconManager beaconManager;
-    private BeaconHandler beaconHandler;
     private BeaconViewModel model;
+    private TextView distanceView;
+    private Vibrator vibrator;
 
     private static final int PERMISSION_REQUEST_COARSE_LOCATION = 1;
 
@@ -30,7 +36,12 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
         Log.d(TAG, "App started up");
+
+        // vibration
+        vibrator = (Vibrator) getSystemService(VIBRATOR_SERVICE);
+        VibrationEffect ve2 = VibrationEffect.createWaveform(new long[]{300, 300,300, 300}, -1);
 
         // Android M Permission check
         if (this.checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
@@ -48,24 +59,39 @@ public class MainActivity extends AppCompatActivity {
         }
         beaconManager = BeaconManager.getInstanceForApplication(this);
         model = new ViewModelProvider(this).get(BeaconViewModel.class);
-        beaconHandler = new BeaconHandler(beaconManager, model);
-        TextView distanceView = findViewById(R.id.distanceView);
+        BeaconHandler beaconHandler = new BeaconHandler(beaconManager, model);
+        distanceView = findViewById(R.id.distanceView);
         final Observer<Boolean> statusObserver = new Observer<Boolean>() {
             @Override
             public void onChanged(Boolean aBoolean) {
-                Log.d(TAG,"status changed!");
+                updateStatus();
+                if(!model.getStatus().getValue()){
+                    vibrator.vibrate(ve2);
+                }
             }
         };
         final Observer<Double> distanceObserver = new Observer<Double>() {
             @Override
             public void onChanged(Double aDouble) {
-                String s = BigDecimal.valueOf(model.getDistance().getValue()).toPlainString();
-                distanceView.setText(s);
-                Log.d(TAG, "distance changed!");
+                updateStatus();
             }
         };
         model.getStatus().observe(this,statusObserver);
         model.getDistance().observe(this,distanceObserver);
+
+    }
+
+    private void updateStatus(){
+        Log.d(TAG, "update status!");
+        String s = "?";
+        if(model.getStatus().getValue() != null && model.getDistance().getValue() != null) {
+            if (model.getStatus().getValue()) {
+                s = BigDecimal.valueOf(model.getDistance().getValue()).toPlainString();
+            } else {
+                s = "?";
+            }
+        }
+        distanceView.setText(s);
     }
 
     @Override
