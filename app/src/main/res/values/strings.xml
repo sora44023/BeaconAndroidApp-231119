@@ -1,3 +1,6 @@
 <resources>
     <string name="app_name">BeaconAndroidApp-231119</string>
+    <string name="textview">\?</string>
+    <string name="info1">忘れ物まで</string>
+    <string name="info2">m</string>
 </resources>

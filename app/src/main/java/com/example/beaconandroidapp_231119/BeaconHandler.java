@@ -1,5 +1,7 @@
 package com.example.beaconandroidapp_231119;
 
+import static java.lang.Integer.valueOf;
+
 import android.util.Log;
 
 import org.altbeacon.beacon.Beacon;
@@ -20,7 +22,6 @@ public class BeaconHandler implements RangeNotifier, MonitorNotifier {
     private final Region mRegion = new Region("B02", uuid, major, minor);
     private BeaconViewModel model;
 
-
     BeaconHandler(BeaconManager bm, BeaconViewModel model){
         bm.addMonitorNotifier(this);
         bm.addRangeNotifier(this);
@@ -36,7 +37,12 @@ public class BeaconHandler implements RangeNotifier, MonitorNotifier {
 
     private void setStatus(boolean status){
         model.getStatus().postValue(status);
-        Log.d(TAG,"set: "+status);
+        Log.d(TAG,"setStatus: "+status);
+    }
+
+    private void setDistance(double d){
+        model.getDistance().postValue(Math.floor(d*10)/10);
+        Log.d(TAG,"setDistance: " + model.getDistance().getValue());
     }
 
     @Override
@@ -63,6 +69,7 @@ public class BeaconHandler implements RangeNotifier, MonitorNotifier {
         if (beacons.size() > 0) {
             for (Beacon beacon : beacons) {
                 Log.i(TAG, "UUID: " + beacon.getId1() + ", major: " + beacon.getId2() + ", minor: " + beacon.getId3() + ", RSSI: " + beacon.getRssi() + ", TxPower: " + beacon.getTxPower() + ", Distance: " + beacon.getDistance());
+                setDistance(beacon.getDistance());
             }
         }
     }
