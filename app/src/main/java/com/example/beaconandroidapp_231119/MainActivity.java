@@ -1,6 +1,8 @@
 package com.example.beaconandroidapp_231119;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.lifecycle.Observer;
+import androidx.lifecycle.ViewModelProvider;
 
 import android.Manifest;
 import android.app.AlertDialog;
@@ -17,6 +19,7 @@ public class MainActivity extends AppCompatActivity {
     protected static final String TAG = "MonitoringActivity";
     private BeaconManager beaconManager;
     private BeaconHandler beaconHandler;
+    private BeaconViewModel model;
 
     private static final int PERMISSION_REQUEST_COARSE_LOCATION = 1;
 
@@ -42,9 +45,16 @@ public class MainActivity extends AppCompatActivity {
                 builder.show();
             }
         }
-
+        model = new ViewModelProvider(this).get(BeaconViewModel.class);
         beaconManager = BeaconManager.getInstanceForApplication(this);
-        beaconHandler = new BeaconHandler(beaconManager);
+        final Observer<Boolean> statusObserver = new Observer<Boolean>() {
+            @Override
+            public void onChanged(Boolean aBoolean) {
+                Log.d(TAG,"status changed!");
+            }
+        };
+        model.getStatus().observe(this,statusObserver);
+        beaconHandler = new BeaconHandler(beaconManager, model);
     }
 
     @Override

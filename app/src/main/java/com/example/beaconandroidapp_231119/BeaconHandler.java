@@ -18,8 +18,10 @@ public class BeaconHandler implements RangeNotifier, MonitorNotifier {
     private final Identifier major = Identifier.parse("1");
     private final Identifier minor = Identifier.parse("2");
     private final Region mRegion = new Region("B02", uuid, major, minor);
+    private BeaconViewModel model;
 
-    BeaconHandler(BeaconManager bm){
+
+    BeaconHandler(BeaconManager bm, BeaconViewModel model){
         bm.addMonitorNotifier(this);
         bm.addRangeNotifier(this);
         bm.startMonitoring(mRegion);
@@ -29,16 +31,24 @@ public class BeaconHandler implements RangeNotifier, MonitorNotifier {
         bm.getBeaconParsers().clear();
         bm.getBeaconParsers().add(new BeaconParser().setBeaconLayout("m:2-3=0215,i:4-19,i:20-21,i:22-23,p:24-24,d:25-25"));
         bm.setDebug(true);
+        this.model = model;
+    }
+
+    private void setStatus(boolean status){
+        model.getStatus().postValue(status);
+        Log.d(TAG,"set: "+status);
     }
 
     @Override
     public void didEnterRegion(Region region) {
         Log.d(TAG, "didEnterRegion");
+        setStatus(true);
     }
 
     @Override
     public void didExitRegion(Region region) {
         Log.d(TAG, "didExitRegion");
+        setStatus(false);
     }
 
     @Override
