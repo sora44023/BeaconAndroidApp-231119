@@ -31,6 +31,7 @@ public class MainActivity extends AppCompatActivity {
     private BeaconViewModel model;
     private ActionBar actionBar;
     private TextView distanceView;
+    private TextView nearView;
     private Vibrator vibrator;
     private final VibrationEffect ve = VibrationEffect.createWaveform(new long[]{300, 300, 300, 300}, -1);
 
@@ -73,6 +74,7 @@ public class MainActivity extends AppCompatActivity {
 
         // view
         distanceView = findViewById(R.id.distanceView);
+        nearView = findViewById(R.id.nearView);
 
         // observation
         final Observer<Boolean> statusObserver = new Observer<Boolean>() {
@@ -88,10 +90,24 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onChanged(Double aDouble) {
                 updateStatus();
+                notifyNearby();
             }
         };
         model.getStatus().observe(this, statusObserver);
         model.getDistance().observe(this, distanceObserver);
+    }
+
+    private void notifyNearby() {
+        if(model.getDistance().getValue() == null){
+            return;
+        }
+        if(model.getDistance().getValue() <= 1.0){
+            nearView.setText("非常に近いです");
+        }else{
+            nearView.setText("");
+        }
+
+
     }
 
     private void notifyOnSignalLoss() {
