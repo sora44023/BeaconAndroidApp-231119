@@ -1,5 +1,6 @@
 package com.example.beaconandroidapp_231119;
 
+import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
@@ -7,26 +8,31 @@ import androidx.lifecycle.ViewModelProvider;
 import android.Manifest;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
-import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
+import android.view.View;
 import android.widget.TextView;
 
 import org.altbeacon.beacon.BeaconManager;
 
 import java.math.BigDecimal;
 
+
 public class MainActivity extends AppCompatActivity {
 
     protected static final String TAG = "MainActivity";
     private BeaconManager beaconManager;
     private BeaconViewModel model;
+    private ActionBar actionBar;
     private TextView distanceView;
     private Vibrator vibrator;
-    private VibrationEffect ve = VibrationEffect.createWaveform(new long[]{300, 300,300, 300}, -1);
+    private final VibrationEffect ve = VibrationEffect.createWaveform(new long[]{300, 300, 300, 300}, -1);
 
     private static final int PERMISSION_REQUEST_COARSE_LOCATION = 1;
 
@@ -34,7 +40,12 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
+
+        // action bar setup
+        actionBar = getSupportActionBar();
+        if (actionBar != null) {
+            actionBar.setTitle(R.string.title);
+        }
         Log.d(TAG, "App started up");
 
         // vibration
@@ -54,9 +65,13 @@ public class MainActivity extends AppCompatActivity {
             });
             builder.show();
         }
+
+        // beacon
         beaconManager = BeaconManager.getInstanceForApplication(this);
         model = new ViewModelProvider(this).get(BeaconViewModel.class);
         BeaconHandler beaconHandler = new BeaconHandler(beaconManager, model);
+
+        // view
         distanceView = findViewById(R.id.distanceView);
 
         // observation
@@ -64,7 +79,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onChanged(Boolean aBoolean) {
                 updateStatus();
-                if(!model.getStatus().getValue()){
+                if (!model.getStatus().getValue()) {
                     notifyOnSignalLoss();
                 }
             }
@@ -75,12 +90,12 @@ public class MainActivity extends AppCompatActivity {
                 updateStatus();
             }
         };
-        model.getStatus().observe(this,statusObserver);
-        model.getDistance().observe(this,distanceObserver);
+        model.getStatus().observe(this, statusObserver);
+        model.getDistance().observe(this, distanceObserver);
     }
 
     private void notifyOnSignalLoss() {
-        Log.d(TAG,"notifyOnSignalLoss");
+        Log.d(TAG, "notifyOnSignalLoss");
         vibrator.vibrate(ve);
         final AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("忘れ物をしています");
@@ -88,44 +103,67 @@ public class MainActivity extends AppCompatActivity {
         builder.setPositiveButton(android.R.string.ok, null);
         builder.create();
         builder.show();
-
     }
 
-    private void updateStatus(){
+    private void updateStatus() {
         Log.d(TAG, "update status!");
         String s = "?";
-        if(model.getStatus().getValue() == null || model.getDistance().getValue() == null) {
+        if (model.getStatus().getValue() == null || model.getDistance().getValue() == null) {
             return;
         }
         if (model.getStatus().getValue()) {
             s = BigDecimal.valueOf(model.getDistance().getValue()).toPlainString();
-        } else {
-            s = "?";
         }
         distanceView.setText(s);
     }
 
     @Override
-    public void onRequestPermissionsResult(int requestCode,String permissions[], int[] grantResults) {
+    public boolean onCreateOptionsMenu(Menu menu){
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.option_menu, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle item selection
+        if (item.getItemId() == R.id.option_menu_about) {
+            showAbout();
+            return true;
+        }
+        return false;
+    }
+
+    private void showAbout() {
+        View messageView = getLayoutInflater().inflate(R.layout.about, null, false);
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle(R.string.app_about);
+        builder.setView(messageView);
+        builder.setPositiveButton(android.R.string.ok, null);
+        builder.create();
+        builder.show();
+    }
+
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
         Log.d(TAG, "onRequestPermissionsResult");
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        switch (requestCode) {
-            case PERMISSION_REQUEST_COARSE_LOCATION: {
-                if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    Log.d(TAG, "coarse location permission granted");
-                } else {
-                    Log.d(TAG, "coarse location permission denied");
-                    final AlertDialog.Builder builder = new AlertDialog.Builder(this);
-                    builder.setTitle("Functionality limited");
-                    builder.setMessage("Since location access has not been granted, this app will not be able to discover beacons when in the background.");
-                    builder.setPositiveButton(android.R.string.ok, null);
-                    builder.setOnDismissListener(new DialogInterface.OnDismissListener() {
-                        @Override
-                        public void onDismiss(DialogInterface dialog) {
-                        }
-                    });
-                    builder.show();
-                }
+        if (requestCode == PERMISSION_REQUEST_COARSE_LOCATION) {
+            if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                Log.d(TAG, "coarse location permission granted");
+            } else {
+                Log.d(TAG, "coarse location permission denied");
+                final AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                builder.setTitle("Functionality limited");
+                builder.setMessage("Since location access has not been granted, this app will not be able to discover beacons when in the background.");
+                builder.setPositiveButton(android.R.string.ok, null);
+                builder.setOnDismissListener(new DialogInterface.OnDismissListener() {
+                    @Override
+                    public void onDismiss(DialogInterface dialog) {
+                    }
+                });
+                builder.show();
             }
         }
     }

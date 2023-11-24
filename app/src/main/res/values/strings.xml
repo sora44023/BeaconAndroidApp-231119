@@ -3,4 +3,7 @@
     <string name="textview">\?</string>
     <string name="info1">忘れ物まで</string>
     <string name="info2">m</string>
+    <string name="title">忘れ物トラッカー</string>
+    <string name="app_about_credits">忘れ物トラッカー 0.1\nCopyright(C) 2023\nTakahito IWANO\niwano.takahito205[at]mail.kyutech.jp</string>
+    <string name="app_about">忘れ物トラッカーについて</string>
 </resources>

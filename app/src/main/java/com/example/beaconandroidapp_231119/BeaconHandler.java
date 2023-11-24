@@ -20,9 +20,9 @@ public class BeaconHandler implements RangeNotifier, MonitorNotifier {
     private final Identifier major = Identifier.parse("1");
     private final Identifier minor = Identifier.parse("2");
     private final Region mRegion = new Region("B02", uuid, major, minor);
-    private BeaconViewModel model;
+    private final BeaconViewModel model;
 
-    BeaconHandler(BeaconManager bm, BeaconViewModel model){
+    BeaconHandler(BeaconManager bm, BeaconViewModel model) {
         bm.addMonitorNotifier(this);
         bm.addRangeNotifier(this);
         bm.startMonitoring(mRegion);
@@ -31,18 +31,18 @@ public class BeaconHandler implements RangeNotifier, MonitorNotifier {
         Log.i(TAG, "start ranging");
         bm.getBeaconParsers().clear();
         bm.getBeaconParsers().add(new BeaconParser().setBeaconLayout("m:2-3=0215,i:4-19,i:20-21,i:22-23,p:24-24,d:25-25"));
-        bm.setDebug(true);
+        BeaconManager.setDebug(true);
         this.model = model;
     }
 
-    private void setStatus(boolean status){
+    private void setStatus(boolean status) {
         model.getStatus().postValue(status);
-        Log.d(TAG,"setStatus: "+status);
+        Log.d(TAG, "setStatus: " + status);
     }
 
-    private void setDistance(double d){
-        model.getDistance().postValue(Math.floor(d*10)/10);
-        Log.d(TAG,"setDistance: " + model.getDistance().getValue());
+    private void setDistance(double d) {
+        model.getDistance().postValue(Math.floor(d * 10) / 10);
+        Log.d(TAG, "setDistance: " + model.getDistance().getValue());
     }
 
     @Override
@@ -59,7 +59,7 @@ public class BeaconHandler implements RangeNotifier, MonitorNotifier {
 
     @Override
     public void didDetermineStateForRegion(int state, Region region) {
-        Log.d(TAG, "didDetermineStateForRegion: "+ state);
+        Log.d(TAG, "didDetermineStateForRegion: " + state);
     }
 
     @Override
